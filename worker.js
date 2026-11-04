@@ -1,10 +1,14 @@
-// Private keys are held exclusively inside this isolated thread scope
+// Isolated Cryptographic State
 const privateKeys = {
   ecdsa: null,
   rsa: null,
 };
 
-// Utilities: Binary to Base64 and Hex
+let currentChainHash =
+  "0000000000000000000000000000000000000000000000000000000000000000"; // Genesis Hash
+let sequenceCounter = 0;
+
+// Binary encoding helpers
 function bufferToBase64(buffer) {
   const bytes = new Uint8Array(buffer);
   let binary = "";
@@ -20,11 +24,17 @@ function bufferToHex(buffer) {
     .join("");
 }
 
+async function sha256Text(text) {
+  const data = new TextEncoder().encode(text);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return bufferToHex(hashBuffer);
+}
+
 async function initializeAuthority() {
   try {
     const ecdsaPair = await crypto.subtle.generateKey(
       { name: "ECDSA", namedCurve: "P-256" },
-      true, // extractable (to export public key only)
+      true,
       ["sign", "verify"],
     );
     privateKeys.ecdsa = ecdsaPair.privateKey;
@@ -41,13 +51,12 @@ async function initializeAuthority() {
     );
     privateKeys.rsa = rsaPair.privateKey;
 
-    // 3. Export ONLY Public Keys to SubjectPublicKeyInfo (SPKI)
     const [ecdsaSpki, rsaSpki] = await Promise.all([
       crypto.subtle.exportKey("spki", ecdsaPair.publicKey),
       crypto.subtle.exportKey("spki", rsaPair.publicKey),
     ]);
 
-    // 4. Notify Main Thread that Central Authority is online
+    // Send public keys to Main Thread
     self.postMessage({
       type: "INIT_SUCCESS",
       payload: {
@@ -65,18 +74,21 @@ async function initializeAuthority() {
   }
 }
 
+/**
+ * Request Handler: Signs the digest and commits to the Audit Log
+ */
 self.onmessage = async (event) => {
   const { type, data } = event.data;
 
   if (type === "SIGN_REQUEST") {
     const { id, docDigestBytes, algorithm, tArrival, tQueueExit } = data;
 
-    // Start measuring raw cryptographic service time (S)
+    // ==== START MEASURE SERVICE TIME ====
     const tStart = performance.now();
 
+    // Signing
     try {
       let signatureBuffer;
-
       if (algorithm === "ECDSA") {
         signatureBuffer = await crypto.subtle.sign(
           { name: "ECDSA", hash: { name: "SHA-256" } },
@@ -93,27 +105,45 @@ self.onmessage = async (event) => {
         throw new Error(`Unsupported algorithm: ${algorithm}`);
       }
 
-      // Stop measuring service time
+      const sigHex = bufferToHex(signatureBuffer);
+      const docDigestHex = bufferToHex(docDigestBytes);
+
+      // Hash Chaining
+      const prevHash = currentChainHash;
+      const newChainHash = await sha256Text(prevHash + sigHex + docDigestHex);
+      currentChainHash = newChainHash;
+      const assignedSequence = sequenceCounter++;
+
+      // ==== STOP MEASURE SERVICE TIME ====
       const tEnd = performance.now();
       const serviceTimeSeconds = (tEnd - tStart) / 1000;
 
-      // Emit completion back to Main Thread
       self.postMessage({
         type: "SIGN_SUCCESS",
-        data: {
-          id,
-          algorithm,
-          docDigestHex: bufferToHex(docDigestBytes),
-          signatureHex: bufferToHex(signatureBuffer),
-          tArrival,
-          tQueueExit,
-          serviceTimeSeconds,
+        payload: {
+          receipt: {
+            sequence: assignedSequence,
+            id,
+            docDigest: docDigestHex,
+            signature: sigHex,
+            algorithm,
+            timestamp: Date.now(),
+            chainProof: {
+              prevHash: prevHash,
+              chainHash: newChainHash,
+            },
+          },
+          telemetry: {
+            tArrival,
+            tQueueExit,
+            serviceTimeSeconds,
+          },
         },
       });
     } catch (err) {
       self.postMessage({
         type: "SIGN_ERROR",
-        data: { id, error: err.message },
+        payload: { id, error: err.message },
       });
     }
   }
