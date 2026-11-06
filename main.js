@@ -39,6 +39,8 @@ const btnTamper = document.getElementById("btn-tamper");
 const btnVerifyChain = document.getElementById("btn-verify-chain");
 const tableBody = document.getElementById("log-rows");
 const consoleOutput = document.getElementById("console-output");
+const fileInput = document.getElementById("file-input");
+
 
 function logToConsole(message) {
   const time = new Date().toISOString().split("T")[1].slice(0, -1);
@@ -267,3 +269,33 @@ btnVerifyChain.addEventListener("click", async () => {
 });
 
 //TODO: Considering adding History Rewrite Attack
+
+export async function notarazieLocalFile(fileBlob, chosenAlgorithm) {
+  const arrayBuffer = await fileBlob.arrayBuffer();
+
+  const digestBuffer = await crypto.subtle.digest("SHA-256", arrayBuffer);
+  const docDigestBytes = new Uint8Array(digestBuffer);
+
+  enqueueSigningRequest(docDigestBytes, chosenAlgorithm);
+}
+
+//TODO: event listner on a specific button or like this?
+fileInput.addEventListener("change", async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const algorithm = selectAlgo.value;
+  await notarizeLocalFile(file, algorithm);
+  fileInput.value = ""; // Reset input so you can re-upload if needed
+});
+
+export async function notarizeLocalFile(fileBlob, algorithm) {
+  const arrayBuffer = await fileBlob.arrayBuffer();
+  const digestBuffer = await crypto.subtle.digest("SHA-256", arrayBuffer);
+  const docDigestBytes = new Uint8Array(digestBuffer);
+
+  logToConsole(`Local document hashed: "${fileBlob.name}"`);
+
+  // Passes the 32-byte hash directly to Developer A's queue
+  enqueueSigningRequest(docDigestBytes, algorithm);
+}
