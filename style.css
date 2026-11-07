@@ -118,7 +118,17 @@ pre {
     border-radius: 4px;
     padding: 8px;
     font-size: 11px;
-    height: 100px;
+    height: 250px;
     overflow-y: auto;
     color: #cbd5e1;
+}
+
+/*TODO: maybe using JS to remove only the central part of the filename*/
+input[type="file"] {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+    color: #94a3b8;
 }

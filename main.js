@@ -6,6 +6,15 @@ const authorityPublicKeys = {
 
 const publicAuditLog = [];
 
+const workerBadge = document.getElementById("worker-badge");
+const selectAlgo = document.getElementById("select-algo");
+const btnSign = document.getElementById("btn-sign");
+const btnTamper = document.getElementById("btn-tamper");
+const btnVerifyChain = document.getElementById("btn-verify-chain");
+const tableBody = document.getElementById("log-rows");
+const consoleOutput = document.getElementById("console-output");
+const fileInput = document.getElementById("file-input");
+
 // Binary conversion utilities for verification
 function base64ToBuffer(b64) {
   const binary = atob(b64);
@@ -31,16 +40,6 @@ async function sha256Text(text) {
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 }
-
-const workerBadge = document.getElementById("worker-badge");
-const selectAlgo = document.getElementById("select-algo");
-const btnSign = document.getElementById("btn-sign");
-const btnTamper = document.getElementById("btn-tamper");
-const btnVerifyChain = document.getElementById("btn-verify-chain");
-const tableBody = document.getElementById("log-rows");
-const consoleOutput = document.getElementById("console-output");
-const fileInput = document.getElementById("file-input");
-
 
 function logToConsole(message) {
   const time = new Date().toISOString().split("T")[1].slice(0, -1);
@@ -78,11 +77,9 @@ notaryWorker.onmessage = (event) => {
   if (type === "SIGN_SUCCESS") {
     const { receipt, telemetry } = payload;
 
-    // Attach public key to the receipt for self-contained independent audits
     receipt.signerPublicKey = authorityPublicKeys[receipt.algorithm];
-
-    // Append to public ledger view
     publicAuditLog.push(receipt);
+
     renderAuditTable();
 
     logToConsole(`SUCCESS: Block #${receipt.sequence} minted.`);
@@ -100,7 +97,17 @@ notaryWorker.onmessage = (event) => {
   }
 };
 
-// Independent Verification Engine
+export async function notarizeLocalFile(fileBlob, chosenAlgorithm) {
+  const arrayBuffer = await fileBlob.arrayBuffer();
+
+  const digestBuffer = await crypto.subtle.digest("SHA-256", arrayBuffer);
+  const docDigestBytes = new Uint8Array(digestBuffer);
+
+  logToConsole(`Local document hashed: "${fileBlob.name}"`);
+
+  enqueueSigningRequest(docDigestBytes, chosenAlgorithm);
+}
+
 export async function verifyReceiptSignature(receipt) {
   try {
     const pubKeyBuf = base64ToBuffer(receipt.signerPublicKey);
@@ -137,47 +144,86 @@ export async function verifyReceiptSignature(receipt) {
   }
 }
 
-export async function verifyEntireAuditChain() {
-  if (publicAuditLog.length === 0) {
-    return { valid: true, count: 0 };
-  }
+export async function executeComprehensiveAudit() {
+  if (publicAuditLog.length === 0) return { status: "EMPTY" };
+
+  let chainIntegrityPassed = true;
+  let signatureIntegrityPassed = true;
+  let firstTamperedBlock = -1;
+  let firstForgedSignatureBlock = -1;
 
   let expectedPrevHash =
     "0000000000000000000000000000000000000000000000000000000000000000";
 
   for (let i = 0; i < publicAuditLog.length; i++) {
-    const entry = publicAuditLog[i];
+    const block = publicAuditLog[i];
 
-    // Chain continuity
-    if (entry.chainProof.prevHash !== expectedPrevHash) {
-      return {
-        valid: false,
-        brokenIndex: i,
-        reason: `Previous hash mismatch! Expected ${expectedPrevHash.slice(0, 8)}... but got ${entry.chainProof.prevHash.slice(0, 8)}...`,
-      };
-    }
-
-    // Recompute Hash Link
+    // Layer 1: Hash Chain Continuity Check
     const recalculated = await sha256Text(
+      block.chainProof.prevHash + block.signature + block.docDigest,
+    );
+
+    if (
+      block.chainProof.prevHash !== expectedPrevHash ||
+      recalculated !== block.chainProof.chainHash
+    ) {
+      if (chainIntegrityPassed) {
+        chainIntegrityPassed = false;
+        firstTamperedBlock = i;
+      }
+    }
+    expectedPrevHash = block.chainProof.chainHash;
+
+    // Layer 2: Notary Asymmetric Signature Verification
+    const isSignatureValid = await verifyReceiptSignature(block);
+    if (!isSignatureValid && signatureIntegrityPassed) {
+      signatureIntegrityPassed = false;
+      firstForgedSignatureBlock = i;
+    }
+  }
+
+  return {
+    chainIntegrityPassed,
+    signatureIntegrityPassed,
+    firstTamperedBlock,
+    firstForgedSignatureBlock,
+  };
+}
+
+export async function executeHistoryRewritingAttack(targetIndex) {
+  if (publicAuditLog.length <= targetIndex) {
+    throw new Error("Target index outside audit log bounds.");
+  }
+
+  //Mutate the target document digest
+  const targetEntry = publicAuditLog[targetIndex];
+  targetEntry.docDigest = "ffffffff" + targetEntry.docDigest.slice(8);
+
+  //Cascade forward: recalculate downstream chain hashes
+  let rollingPrevHash = targetEntry.chainProof.prevHash;
+
+  //Recompute current link
+  for (let i = targetIndex; i < publicAuditLog.length; i++) {
+    const entry = publicAuditLog[i];
+    entry.chainProof.prevHash = rollingPrevHash;
+
+    entry.chainProof.chainHash = await sha256Text(
       entry.chainProof.prevHash + entry.signature + entry.docDigest,
     );
 
-    if (recalculated !== entry.chainProof.chainHash) {
-      return {
-        valid: false,
-        brokenIndex: i,
-        reason: `Hash mutation detected! Entry content was modified.`,
-      };
-    }
-
-    expectedPrevHash = entry.chainProof.chainHash;
+    rollingPrevHash = entry.chainProof.chainHash;
   }
 
-  return { valid: true, count: publicAuditLog.length };
+  renderAuditTable();
 }
 
 function renderAuditTable() {
   tableBody.innerHTML = "";
+
+  if (publicAuditLog.length === 0) {
+    tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #64748b">No documents signed yet.</td></tr>`;
+    return;
+  }
 
   publicAuditLog.forEach((item) => {
     const tr = document.createElement("tr");
@@ -191,6 +237,9 @@ function renderAuditTable() {
       <td class="p-2">
         <button onclick="window.verifySingleRow(${item.sequence})" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-white text-xs">
           Verify
+        </button>
+        <button onclick="window.attackRewriteRow(${item.sequence})" class="danger" style="margin-left: 4px; padding: 2px 6px; font-size: 11px;">
+          Rewrite
         </button>
       </td>
     `;
@@ -206,7 +255,7 @@ window.verifySingleRow = async (sequence) => {
   );
 };
 
-//TODO: add option to load real document, placeholding with "dummyContent"
+//TODO: Remove it after implementation of notarization of local file is completed
 btnSign.addEventListener("click", async () => {
   btnSign.disabled = true;
   const chosenAlgorithm = selectAlgo.value;
@@ -241,43 +290,38 @@ btnTamper.addEventListener("click", () => {
     alert("Sign at least one document first!");
     return;
   }
-  // Mutate the document digest of the latest entry to simulate an attack
-  // TODO: Considering others attack vector simulations
   const target = publicAuditLog[publicAuditLog.length - 1];
   target.docDigest = "ffff" + target.docDigest.slice(4);
-  renderAuditTable();
 
   logToConsole(
     `ATTACK SIMULATED: Tampered with document digest in Block #${target.sequence}!`,
   );
-  alert(
-    `Tampered with Block #${target.sequence}! Run "Verify Chain" or click "Verify" on that row.`,
-  );
 });
 
 btnVerifyChain.addEventListener("click", async () => {
-  const result = await verifyEntireAuditChain();
-  if (result.valid) {
-    alert(
-      `✅ Audit Chain Valid! All ${result.count} blocks are cryptographically intact and strictly ordered.`,
-    );
-  } else {
-    alert(
-      `❌ AUDIT CHAIN COMPROMISED at Block #${result.brokenIndex}!\nReason: ${result.reason}`,
-    );
+  const result = await executeComprehensiveAudit();
+
+  if (result.status === "EMPTY") {
+    alert("Ledger is empty. Sign some documents first!");
+    return;
   }
+
+  let msg = `AUDIT REPORT (${result.totalBlocks} Blocks Checked)\n`;
+  msg += `----------------------------------------\n`;
+  msg += `Layer 1 (Hash Chain Links):  ${result.chainIntegrityPassed ? "✅ VALID" : "❌ BROKEN at Block #" + result.firstTamperedBlock}\n`;
+  msg += `Layer 2 (Digital Signatures): ${result.signatureIntegrityPassed ? "✅ VALID" : "❌ FORGERY at Block #" + result.firstForgedSignatureBlock}\n`;
+  msg += `----------------------------------------\n`;
+
+  if (result.chainIntegrityPassed && result.signatureIntegrityPassed) {
+    msg += `🏆 RESULT: Ledger is 100% authentic and uncorrupted.`;
+  } else if (result.chainIntegrityPassed && !result.signatureIntegrityPassed) {
+    msg += `🚨 RESULT: HISTORY-REWRITING ATTACK DETECTED!\nHashes were recalculated to match, but the Notary signatures are invalid!`;
+  } else {
+    msg += `🚨 RESULT: LEDGER TAMPERING DETECTED!`;
+  }
+
+  logToConsole(msg);
 });
-
-//TODO: Considering adding History Rewrite Attack
-
-export async function notarazieLocalFile(fileBlob, chosenAlgorithm) {
-  const arrayBuffer = await fileBlob.arrayBuffer();
-
-  const digestBuffer = await crypto.subtle.digest("SHA-256", arrayBuffer);
-  const docDigestBytes = new Uint8Array(digestBuffer);
-
-  enqueueSigningRequest(docDigestBytes, chosenAlgorithm);
-}
 
 //TODO: event listner on a specific button or like this?
 fileInput.addEventListener("change", async (event) => {
@@ -286,16 +330,16 @@ fileInput.addEventListener("change", async (event) => {
 
   const algorithm = selectAlgo.value;
   await notarizeLocalFile(file, algorithm);
-  fileInput.value = ""; // Reset input so you can re-upload if needed
+  fileInput.value = "";
 });
 
-export async function notarizeLocalFile(fileBlob, algorithm) {
-  const arrayBuffer = await fileBlob.arrayBuffer();
-  const digestBuffer = await crypto.subtle.digest("SHA-256", arrayBuffer);
-  const docDigestBytes = new Uint8Array(digestBuffer);
-
-  logToConsole(`Local document hashed: "${fileBlob.name}"`);
-
-  // Passes the 32-byte hash directly to Developer A's queue
-  enqueueSigningRequest(docDigestBytes, algorithm);
-}
+window.attackRewriteRow = async (sequence) => {
+  try {
+    await executeHistoryRewritingAttack(sequence);
+  } catch (err) {
+    alert(`Error: ${err.message}`);
+  }
+  logToConsole(
+    `[ATTACK] Hashes updated in the table for Block #${sequence} onward.`,
+  );
+};
