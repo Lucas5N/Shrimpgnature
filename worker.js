@@ -1,3 +1,7 @@
+// ============================================================================
+// worker.js - The Central Notary Authority (Background Web Worker)
+// ============================================================================
+
 // Isolated Cryptographic State
 const privateKeys = {
   ecdsa: null,
@@ -86,7 +90,6 @@ self.onmessage = async (event) => {
     // ==== START MEASURE SERVICE TIME ====
     const tStart = performance.now();
 
-    // Signing
     try {
       let signatureBuffer;
       if (algorithm === "ECDSA") {
@@ -149,4 +152,5 @@ self.onmessage = async (event) => {
   }
 };
 
+// Boot up the authority
 initializeAuthority();
