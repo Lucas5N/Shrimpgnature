@@ -20,8 +20,8 @@
             </header>
 
             <!-- Operational Controls -->
-            <div class="card controls">
-                <div style="margin-top: 10px">
+            <div class="card controls" style="flex-wrap: wrap; gap: 12px;">
+                <div>
                     <label
                         for="file-input"
                         style="
@@ -35,42 +35,78 @@
                     </label>
                     <input type="file" id="file-input" />
                 </div>
-                <select id="select-algo">
-                    <option value="ECDSA">ECDSA (P-256)</option>
-                    <option value="RSA-PSS">RSA-PSS (4096)</option>
-                </select>
 
-                <button id="btn-sign" disabled>Sign Document</button>
-                <button id="btn-tamper" class="danger">Simulate Attack</button>
-                <button id="btn-verify-chain" class="success">
-                    Verify Chain
-                </button>
+                <div>
+                    <label
+                        for="select-algo"
+                        style="
+                            font-size: 12px;
+                            color: #94a3b8;
+                            display: block;
+                            margin-bottom: 4px;
+                        "
+                    >
+                        Algorithm:
+                    </label>
+                    <select id="select-algo">
+                        <option value="ECDSA">ECDSA (P-256)</option>
+                        <option value="RSA-PSS">RSA-PSS (4096)</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; align-items: flex-end;">
+                    <button id="btn-sign" disabled>Sign Single Doc</button>
+                </div>
+
+                <!-- Poisson Simulation Controls -->
+                <div style="border-left: 1px solid #334155; padding-left: 12px; display: flex; align-items: flex-end; gap: 8px;">
+                    <div>
+                        <label for="input-lambda" style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px;">λ (req/s):</label>
+                        <input type="number" id="input-lambda" value="5" min="1" max="5000" style="width: 60px; padding: 6px; font-size: 13px; background: #0f172a; color: #f8fafc; border: 1px solid #475569; border-radius: 4px;" />
+                    </div>
+                    <div>
+                        <label for="input-count" style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px;">Total Req:</label>
+                        <input type="number" id="input-count" value="100" min="1" max="10000" style="width: 70px; padding: 6px; font-size: 13px; background: #0f172a; color: #f8fafc; border: 1px solid #475569; border-radius: 4px;" />
+                    </div>
+                    <button id="btn-sim" class="success">Start Workload</button>
+                </div>
+
+                <!-- Attack & Audit Controls -->
+                <div style="border-left: 1px solid #334155; padding-left: 12px; display: flex; align-items: flex-end; gap: 6px;">
+                    <button id="btn-tamper" class="danger">Simulate Attack</button>
+                    <button id="btn-verify-chain" class="success">Verify Chain</button>
+                </div>
             </div>
 
-            <!-- The Ordered Ledger Table -->
+            <!-- The Ordered Ledger Table (Now with Scrolling) -->
             <div class="card">
-                <h3 style="font-size: 14px">Ordered Audit Log</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Seq</th>
-                            <th>Digest</th>
-                            <th>Signature</th>
-                            <th>Chain Hash</th>
-                            <th>Audit</th>
-                        </tr>
-                    </thead>
-                    <tbody id="log-rows">
-                        <tr>
-                            <td
-                                colspan="5"
-                                style="text-align: center; color: #64748b"
-                            >
-                                No documents signed yet.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <h3 style="font-size: 14px; margin-bottom: 8px;">Ordered Audit Log</h3>
+                
+                <!-- SCROLLABLE WRAPPER -->
+                <div style="max-height: 350px; overflow-y: auto; border: 1px solid #334155; border-radius: 4px; background: #0f172a;">
+                    <table style="margin-top: 0; width: 100%;">
+                        <!-- STICKY HEADER -->
+                        <thead style="position: sticky; top: 0; background: #1e293b; box-shadow: 0 1px 0 #334155;">
+                            <tr>
+                                <th>Seq</th>
+                                <th>Digest</th>
+                                <th>Signature</th>
+                                <th>Chain Hash</th>
+                                <th>Audit</th>
+                            </tr>
+                        </thead>
+                        <tbody id="log-rows">
+                            <tr>
+                                <td
+                                    colspan="5"
+                                    style="text-align: center; color: #64748b; padding: 12px;"
+                                >
+                                    No documents signed yet.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- Console Output -->
