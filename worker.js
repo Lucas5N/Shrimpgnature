@@ -11,7 +11,7 @@ const privateKeys = {
 let currentChainHash =
   "0000000000000000000000000000000000000000000000000000000000000000"; // Genesis Hash
 let sequenceCounter = 0;
-
+ 
 // Binary encoding helpers
 function bufferToBase64(buffer) {
   const bytes = new Uint8Array(buffer);
