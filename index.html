@@ -3,262 +3,322 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Digital Notary & Audit Trail</title>
+        <meta name="theme-color" content="#f5f6f8" />
+        <title>Shrimpgnature — Cryptographic document notary</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;650;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+            rel="stylesheet"
+        />
         <link rel="stylesheet" href="style.css" />
         <!-- Chart.js via CDN -->
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     </head>
     <body>
-        <div class="container">
-            <!-- Header -->
-            <header>
-                <div>
-                    <h2>The Digital Notary</h2>
-                    <small style="color: #94a3b8"
-                        >Client Thread + Isolated Web Worker (Central
-                        Authority)</small
-                    >
+        <main class="shell">
+            <header class="topbar">
+                <div class="brand">
+                    <div class="brand-mark" aria-hidden="true">
+                        <svg viewBox="0 0 48 48" fill="none">
+                            <path
+                                d="M31.8 10.2c-7.8-4.8-18.1-.4-18.1 8.4 0 6.4 5.2 9.2 10.2 10.9 5.3 1.9 6.8 7.2 2.2 10.2-3.7 2.4-8.6.9-10.4-2.3"
+                                stroke="currentColor"
+                                stroke-width="3.8"
+                                stroke-linecap="round"
+                            />
+                            <path
+                                d="m14.8 37.4-5 3.3m5-3.3-1.4 5.7m1.4-5.7 4.2 4.2M31.5 10l4.2-4.4m-4.2 4.4 6.1.2"
+                                stroke="currentColor"
+                                stroke-width="1.8"
+                                stroke-linecap="round"
+                            />
+                            <circle
+                                cx="31.7"
+                                cy="13.4"
+                                r="1.7"
+                                fill="currentColor"
+                            />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="brand-name">Shrimp<span>gnature</span></div>
+                        <div class="brand-sub">
+                            Cryptographic document notary
+                        </div>
+                    </div>
                 </div>
-                <span id="worker-badge" class="badge">INITIALIZING</span>
+                <span id="worker-badge" class="badge" role="status"
+                    >INITIALIZING</span
+                >
             </header>
 
-            <!-- Top Dashboard Grid: Panels 1 to 4 -->
-            <div class="dashboard-grid">
-                <!-- Left Column: Panels 1 & 3 -->
-                <div class="col-left">
-                    <!-- PANEL 1: Control & Ingestion -->
-                    <div class="card">
-                        <h3 class="panel-title">
-                            Panel 1: Control & Ingestion
-                        </h3>
+            <section class="intro">
+                <h1>Signing &amp; verification</h1>
+                <p>
+                    Register document fingerprints, inspect the ledger and test
+                    service performance.
+                </p>
+            </section>
 
-                        <div class="control-group">
-                            <label>Notarize Local File:</label>
-                            <div class="file-picker-wrapper">
-                                <button
-                                    type="button"
-                                    onclick="
-                                        document
-                                            .getElementById('file-input')
-                                            .click()
-                                    "
+            <!-- Control & Ingestion -->
+            <section class="section" aria-labelledby="signing-title">
+                <div class="section-heading">
+                    <h2 class="section-title" id="signing-title">
+                        Control &amp; ingestion
+                    </h2>
+                    <span class="eyebrow">01 / Intake</span>
+                </div>
+                <div class="signing-grid">
+                    <div>
+                        <button
+                            type="button"
+                            class="dropzone"
+                            onclick="
+                                document.getElementById('file-input').click()
+                            "
+                        >
+                            <span class="upload-icon" aria-hidden="true">
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.7"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
                                 >
-                                    Choose File
-                                </button>
+                                    <path d="M12 16V4m-4 4 4-4 4 4" />
+                                    <path
+                                        d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"
+                                    />
+                                </svg>
+                            </span>
+                            <span class="drop-copy">
+                                <span class="drop-title"
+                                    >Notarize a local file</span
+                                >
+                                <span class="drop-help"
+                                    ><span class="browse">Choose file</span>.
+                                    Any file type.</span
+                                >
                                 <span
                                     id="file-name-display"
                                     class="file-display"
                                     >No file chosen</span
                                 >
-                                <input
-                                    type="file"
-                                    id="file-input"
-                                    style="display: none"
+                            </span>
+                        </button>
+                        <input type="file" id="file-input" hidden />
+                        <div class="privacy-note">
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.8"
+                                aria-hidden="true"
+                            >
+                                <rect
+                                    x="5"
+                                    y="10"
+                                    width="14"
+                                    height="11"
+                                    rx="2"
                                 />
-                            </div>
-                        </div>
-
-                        <div class="control-row">
-                            <div class="control-group" style="flex: 1">
-                                <label for="select-algo">Algorithm:</label>
-                                <select id="select-algo">
-                                    <option value="ECDSA">ECDSA (P-256)</option>
-                                    <option value="RSA-PSS">
-                                        RSA-PSS (4096)
-                                    </option>
-                                </select>
-                            </div>
-                            <div
-                                style="
-                                    align-self: flex-end;
-                                    margin-bottom: 10px;
-                                "
-                            >
-                                <button id="btn-sign" disabled>
-                                    Sign Single Doc
-                                </button>
-                            </div>
-                        </div>
-
-                        <div
-                            class="control-group"
-                            style="
-                                border-top: 1px solid #334155;
-                                padding-top: 10px;
-                                margin-top: 6px;
-                            "
-                        >
-                            <label>Poisson Traffic Generator:</label>
-                            <div class="control-row">
-                                <div>
-                                    <span class="sub-label">λ (req/s):</span>
-                                    <input
-                                        type="number"
-                                        id="input-lambda"
-                                        value="5"
-                                        min="1"
-                                        max="1000"
-                                        style="width: 65px"
-                                    />
-                                </div>
-                                <div>
-                                    <span class="sub-label">Total Req:</span>
-                                    <input
-                                        type="number"
-                                        id="input-count"
-                                        value="100"
-                                        min="1"
-                                        max="10000"
-                                        style="width: 75px"
-                                    />
-                                </div>
-                                <div style="align-self: flex-end">
-                                    <button id="btn-sim" class="success">
-                                        Start Workload
-                                    </button>
-                                </div>
-                            </div>
+                                <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                            </svg>
+                            Hashed locally · file is not uploaded
                         </div>
                     </div>
 
-                    <!-- PANEL 3: Attack Simulation -->
-                    <div class="card" style="margin-top: 16px">
-                        <h3 class="panel-title">Panel 3: Attack Simulation</h3>
-                        <p
-                            style="
-                                font-size: 11px;
-                                color: #94a3b8;
-                                margin-bottom: 10px;
-                            "
+                    <div class="algorithm-panel">
+                        <label class="field-label" for="select-algo"
+                            >Signature algorithm</label
                         >
-                            Test ledger resilience against bit-rot tampering and
-                            historical recalculations.
+                        <select id="select-algo">
+                            <option value="ECDSA">ECDSA (P-256)</option>
+                            <option value="RSA-PSS">RSA-PSS (4096)</option>
+                        </select>
+                        <button id="btn-sign" class="primary" disabled>
+                            Sign Single Doc
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Poisson Traffic Generator -->
+            <section class="section" aria-labelledby="simulation-title">
+                <div class="section-heading">
+                    <h2 class="section-title" id="simulation-title">
+                        Poisson traffic generator
+                    </h2>
+                    <span class="eyebrow">02 / Load test</span>
+                </div>
+                <div class="simulation">
+                    <div>
+                        <div class="control-head">
+                            <label class="field-label" for="input-lambda"
+                                >λ (req/s)</label
+                            ><output id="lambda-value" for="input-lambda"
+                                >5</output
+                            >
+                        </div>
+                        <input
+                            type="range"
+                            id="input-lambda"
+                            value="5"
+                            min="1"
+                            max="100"
+                            step="1"
+                        />
+                        <div class="range-bounds">
+                            <span>1</span><span>100</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="control-head">
+                            <label class="field-label" for="input-count"
+                                >Total Req</label
+                            ><output id="count-value" for="input-count"
+                                >100</output
+                            >
+                        </div>
+                        <input
+                            type="range"
+                            id="input-count"
+                            value="100"
+                            min="10"
+                            max="1000"
+                            step="10"
+                        />
+                        <div class="range-bounds">
+                            <span>10</span><span>1000</span>
+                        </div>
+                    </div>
+                    <button id="btn-sim" class="success">Start Workload</button>
+                </div>
+            </section>
+
+            <!-- Real-Time Telemetry -->
+            <section class="section" aria-labelledby="metrics-title">
+                <div class="section-heading">
+                    <h2 class="section-title" id="metrics-title">
+                        Real-time telemetry
+                    </h2>
+                    <span class="eyebrow">03 / Performance</span>
+                </div>
+                <div class="metrics">
+                    <article class="metric">
+                        <div class="metric-top">Utilization (ρ)</div>
+                        <div id="kpi-rho" class="metric-value">0.00</div>
+                    </article>
+                    <article class="metric">
+                        <div class="metric-top">Service Rate (μ)</div>
+                        <div id="kpi-mu" class="metric-value">-- req/s</div>
+                    </article>
+                    <article class="metric">
+                        <div class="metric-top">Mean Service (S)</div>
+                        <div id="kpi-means" class="metric-value">-- ms</div>
+                    </article>
+                    <article class="metric">
+                        <div class="metric-top">Queue Depth (Lq)</div>
+                        <div id="kpi-queue-depth" class="metric-value">0</div>
+                    </article>
+                </div>
+            </section>
+
+            <!-- Live Performance -->
+            <section class="section" aria-labelledby="chart-title">
+                <div class="section-heading">
+                    <h2 class="section-title" id="chart-title">
+                        Live performance
+                    </h2>
+                    <span class="eyebrow">Window: 50 samples</span>
+                </div>
+                <div class="chart-box">
+                    <canvas id="queue-chart"></canvas>
+                </div>
+            </section>
+
+            <!-- Ordered Audit Log -->
+            <section class="section" aria-labelledby="ledger-title">
+                <div class="section-heading">
+                    <h2 class="section-title" id="ledger-title">
+                        Ordered audit log
+                    </h2>
+                    <span class="eyebrow">04 / Integrity</span>
+                </div>
+                <div class="ledger-panel">
+                    <div class="ledger-toolbar">
+                        <p>
+                            Forward hash chain. Test ledger resilience against
+                            bit-rot tampering and historical recalculations.
                         </p>
-                        <div class="control-row">
-                            <button id="btn-tamper" class="danger">
-                                Tamper Last Digest
-                            </button>
-                            <button id="btn-verify-chain" class="success">
-                                Run Comprehensive Audit
-                            </button>
-                        </div>
+                    </div>
+                    <div class="table-scroll-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Seq</th>
+                                    <th scope="col">Doc Digest</th>
+                                    <th scope="col">Signature</th>
+                                    <th scope="col">Chain Hash</th>
+                                    <th scope="col" class="actions-col">
+                                        Audit
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="log-rows">
+                                <tr>
+                                    <td colspan="5" class="empty">
+                                        No documents signed yet.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="ledger-actions">
+                        <button id="btn-tamper" class="danger">
+                            Tamper Last Digest
+                        </button>
+                        <button id="btn-verify-chain" class="success">
+                            Run Comprehensive Audit
+                        </button>
                     </div>
                 </div>
+            </section>
 
-                <!-- Right Column: Panels 2 & 4 -->
-                <div class="col-right">
-                    <!-- PANEL 2: Real-Time Telemetry Cards -->
-                    <div class="card">
-                        <h3 class="panel-title">
-                            Panel 2: Real-Time Telemetry
-                        </h3>
-                        <div class="kpi-grid">
-                            <div class="kpi-card">
-                                <span class="kpi-label">Utilization (ρ)</span>
-                                <span id="kpi-rho" class="kpi-value">0.00</span>
-                            </div>
-                            <div class="kpi-card">
-                                <span class="kpi-label">Service Rate (μ)</span>
-                                <span id="kpi-mu" class="kpi-value"
-                                    >-- req/s</span
-                                >
-                            </div>
-                            <div class="kpi-card">
-                                <span class="kpi-label">Mean Service (S)</span>
-                                <span id="kpi-means" class="kpi-value"
-                                    >-- ms</span
-                                >
-                            </div>
-                            <div class="kpi-card">
-                                <span class="kpi-label">Queue Depth (Lq)</span>
-                                <span id="kpi-queue-depth" class="kpi-value"
-                                    >0</span
-                                >
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- PANEL 4: Live Queue Performance Plot -->
-                    <div class="card" style="margin-top: 16px">
-                        <div
-                            style="
-                                display: flex;
-                                justify-content: space-between;
-                                align-items: center;
-                                margin-bottom: 8px;
-                            "
-                        >
-                            <h3
-                                class="panel-title"
-                                style="
-                                    margin-bottom: 0;
-                                    border-bottom: none;
-                                    padding-bottom: 0;
-                                "
-                            >
-                                Panel 4: Live Performance
-                            </h3>
-                            <span style="font-size: 10px; color: #94a3b8"
-                                >Window: 50 Samples</span
-                            >
-                        </div>
-                        <div
-                            style="
-                                position: relative;
-                                height: 180px;
-                                width: 100%;
-                            "
-                        >
-                            <canvas id="queue-chart"></canvas>
-                        </div>
-                    </div>
+            <!-- Execution Terminal -->
+            <section class="section" aria-labelledby="console-title">
+                <div class="section-heading">
+                    <h2 class="section-title" id="console-title">
+                        Execution terminal
+                    </h2>
+                    <span class="eyebrow">05 / Activity</span>
                 </div>
-            </div>
+                <pre
+                    id="console-output"
+                    role="log"
+                    aria-live="polite"
+                    tabindex="0"
+                >
+Awaiting worker startup...</pre>
+            </section>
+        </main>
 
-            <!-- PANEL 5: The Ordered Audit Log -->
-            <div class="card" style="margin-top: 16px">
-                <h3 class="panel-title">
-                    Panel 5: Ordered Audit Log (Forward Hash Chain)
-                </h3>
-
-                <div class="table-scroll-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="width: 8%">Seq</th>
-                                <th style="width: 25%">Doc Digest</th>
-                                <th style="width: 25%">Signature</th>
-                                <th style="width: 25%">Chain Hash</th>
-                                <th style="width: 17%">Audit</th>
-                            </tr>
-                        </thead>
-                        <tbody id="log-rows">
-                            <tr>
-                                <td
-                                    colspan="5"
-                                    style="
-                                        text-align: center;
-                                        color: #64748b;
-                                        padding: 12px;
-                                    "
-                                >
-                                    No documents signed yet.
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Execution Terminal Output -->
-            <div class="card" style="margin-top: 16px">
-                <h3 style="font-size: 12px; margin-bottom: 6px; color: #94a3b8">
-                    Execution Terminal
-                </h3>
-                <pre id="console-output">Awaiting worker startup...</pre>
-            </div>
-        </div>
-
+        <script>
+            // Display-only: mirror slider values into their read-outs.
+            for (const [id, out] of [
+                ["input-lambda", "lambda-value"],
+                ["input-count", "count-value"],
+            ]) {
+                const input = document.getElementById(id),
+                    o = document.getElementById(out);
+                input.addEventListener(
+                    "input",
+                    () => (o.textContent = input.value),
+                );
+            }
+        </script>
         <script type="module" src="src/main.js"></script>
     </body>
 </html>
