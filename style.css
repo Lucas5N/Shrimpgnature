@@ -22,10 +22,10 @@ body {
 
 .container {
     width: 100%;
-    max-width: 850px;
+    max-width: 960px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 8px;
 }
 
 header {
@@ -34,6 +34,7 @@ header {
     align-items: center;
     border-bottom: 1px solid #334155;
     padding-bottom: 12px;
+    margin-bottom: 8px;
 }
 
 .badge {
@@ -54,24 +55,89 @@ header {
     background: #1e293b;
     border: 1px solid #334155;
     border-radius: 6px;
-    padding: 16px;
+    padding: 14px;
 }
 
-.controls {
+/* Dashboard Grid Layout */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 850px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.panel-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #cbd5e1;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #334155;
+    padding-bottom: 4px;
+}
+
+/* Form Controls */
+.control-group {
+    margin-bottom: 8px;
+}
+
+.control-group label {
+    font-size: 11px;
+    color: #94a3b8;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.sub-label {
+    font-size: 10px;
+    color: #64748b;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.control-row {
     display: flex;
     gap: 8px;
     align-items: center;
 }
 
+/* File Picker */
+.file-picker-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.file-display {
+    font-size: 11px;
+    color: #94a3b8;
+    font-family: monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 170px;
+}
+
 select,
+input[type="number"],
 button {
-    padding: 6px 12px;
-    font-size: 13px;
+    padding: 6px 10px;
+    font-size: 12px;
     border-radius: 4px;
     border: 1px solid #475569;
     background: #0f172a;
     color: #f8fafc;
     cursor: pointer;
+}
+
+input[type="number"] {
+    cursor: text;
 }
 
 button:hover:not(:disabled) {
@@ -88,28 +154,84 @@ button.danger {
     color: #f87171;
 }
 
+button.danger:hover:not(:disabled) {
+    background: rgba(220, 38, 38, 0.2);
+}
+
 button.success {
     border-color: #059669;
     color: #34d399;
 }
 
+button.success:hover:not(:disabled) {
+    background: rgba(5, 150, 105, 0.2);
+}
+
+/* KPI Telemetry Cards */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.kpi-card {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 4px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+.kpi-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+}
+
+.kpi-value {
+    font-size: 15px;
+    font-family: monospace;
+    font-weight: 700;
+    color: #38bdf8;
+    margin-top: 2px;
+}
+
+/* Scrollable Table */
+.table-scroll-wrapper {
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid #334155;
+    border-radius: 4px;
+    background: #0f172a;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 12px;
-    margin-top: 8px;
+    font-size: 11px;
+}
+
+thead {
+    position: sticky;
+    top: 0;
+    background: #1e293b;
+    box-shadow: 0 1px 0 #334155;
+    z-index: 1;
 }
 
 th,
 td {
     text-align: left;
-    padding: 8px;
+    padding: 6px 8px;
     border-bottom: 1px solid #334155;
     font-family: monospace;
 }
 
 th {
     color: #94a3b8;
+    font-size: 10px;
 }
 
 pre {
@@ -118,17 +240,7 @@ pre {
     border-radius: 4px;
     padding: 8px;
     font-size: 11px;
-    height: 250px;
+    height: 90px;
     overflow-y: auto;
     color: #cbd5e1;
-}
-
-/*TODO: maybe using JS to remove only the central part of the filename*/
-input[type="file"] {
-    max-width: 220px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 11px;
-    color: #94a3b8;
 }
