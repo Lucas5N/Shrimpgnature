@@ -383,6 +383,11 @@ input[type="range"]:disabled {
     padding: 10px 15px;
 }
 
+#btn-export-csv {
+    white-space: nowrap;
+    padding: 10px 15px;
+}
+
 /* Telemetry */
 .metrics {
     display: grid;
