@@ -1,0 +1,302 @@
+% ============================================================================
+% Report template - Sapienza Università di Roma
+% Compile with: pdflatex report_template.tex (run twice for the TOC)
+% Put the logo next to this file as  sapienza_logo.png  (or .pdf).
+% If the logo is missing, a placeholder box is printed instead.
+% ============================================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}      % use [italian] for an Italian report
+\usepackage{lmodern}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+\usepackage{caption}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage[hidelinks]{hyperref}
+
+% --- Colours ---------------------------------------------------------------
+\definecolor{sapienza}{RGB}{124,31,52}     % adjust to the official maroon if needed
+\definecolor{codebg}{RGB}{247,247,247}
+
+% --- Metadata: edit only this block ----------------------------------------
+\newcommand{\universityname}{Sapienza Università di Roma}
+\newcommand{\facultyname}{Master's in Cybersecurity}
+\newcommand{\coursename}{Statistics}
+\newcommand{\reporttitle}{Shrimpgnature:\\ Signed Audit Logs under a FIFO Queue}
+\newcommand{\reportsubtitle}{Design, implementation and performance analysis}
+\newcommand{\studentnameG}{Guglielmo Forte}
+\newcommand{\studentidG}{Matricola 2351773}
+\newcommand{\studentnameL}{Staiano Luca}
+\newcommand{\studentidL}{Matricola 2325802}
+\newcommand{\professorname}{Prof. Tommaso Gastaldi}
+\newcommand{\academicyear}{2026/2027}
+
+% --- Helpers ---------------------------------------------------------------
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}   % delete all before submitting
+
+\lstdefinelanguage{JavaScript}{
+  keywords={const,let,var,function,async,await,return,if,else,for,while,new,
+            export,import,try,catch,throw,true,false,null,typeof},
+  comment=[l]{//}, morecomment=[s]{/*}{*/}, morestring=[b]', morestring=[b]",
+  morestring=[b]`
+}
+\lstset{
+  language=JavaScript, basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{codebg}, keywordstyle=\color{sapienza}\bfseries,
+  commentstyle=\color{gray}\itshape, stringstyle=\color{blue!60!black},
+  frame=single, rulecolor=\color{black!20}, breaklines=true,
+  numbers=left, numberstyle=\tiny\color{gray}, xleftmargin=1.5em,
+  framexleftmargin=1.5em, columns=fullflexible
+}
+
+% --- Header / footer -------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small\textcolor{sapienza}{\universityname}}
+\rhead{\small\coursename}
+\cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\headheight}{14pt}
+
+\begin{document}
+
+% ============================== TITLE PAGE ==================================
+\begin{titlepage}
+\centering
+
+% --- LOGO LEFT ALIGNMENT START ---
+\begin{flushleft}
+\IfFileExists{logo_Sapienza.png}{%
+    \includegraphics[width=0.33\textwidth]{./logo_Sapienza.png}%
+}{\IfFileExists{sapienza_logo.pdf}{%
+    \includegraphics[width=0.33\textwidth]{}%
+}{%
+    \fbox{\parbox[c][3.5cm][c]{5cm}{\centering\textcolor{red}{LOGO MISSING}\\ \small add \texttt{sapienza\_logo.png}}}%
+}}
+\end{flushleft}
+\nopagebreak[4]
+\vspace{1.2cm}
+% --- LOGO LEFT ALIGNMENT END ---
+
+{\Large\scshape \universityname\par}
+\vspace{0.2cm}
+{\large \facultyname\par}
+{\large \coursename\par}
+\vspace{1 cm}
+{\color{sapienza}\rule{\textwidth}{1pt}}\\[0.6cm]
+{\Huge\bfseries \reporttitle\par}
+\vspace{0.4cm}
+{\Large \reportsubtitle\par}
+\vspace{0.3cm}
+{\color{sapienza}\rule{\textwidth}{1pt}}
+\vfill
+\begin{tabular}{rl}
+\textbf{Students:} & \studentnameG \\
+& \studentidG \\[0.3cm]
+& \studentnameL \\
+& \studentidL \\[1cm]
+\textbf{Professor:} & \professorname \\[3cm]
+\end{tabular}
+\vfill
+{\large Academic Year \academicyear\par}
+\end{titlepage}
+
+
+% ============================== FRONT MATTER ================================
+\pagenumbering{roman}
+\begin{abstract}
+\noindent
+This report presents the ? 
+\end{abstract}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\begin{spacing}{1.1}
+
+% ============================== 1. INTRODUCTION (~1 page) ===================
+\section{Introduction}
+
+Digital signatures are essential for proving the authenticity, integrity and non-repudiation of documents. They guarantee that a specific record was processed by a notary and that it has not sustained any modification since being signed. \\\\
+However if a system solely relied on digital signatures, a malicious actor could silently delete a previously notarized document, reorder historycal transactions or present an incomplete version of the events to an auditor which would not detect any related issues since the signatures of the individual document would still be mathematically valid.\\\\
+To prevent this, a notary requires a notary requires an ordered log which enables tamper detection. By structuring recepits into a caryptographic hash chain, each new notary operation is linked to the previous one, thus creating an immutable sequence. Any attempt to remove, reorder, alter past events will inevitably cause incoherence in the chain, which is detectable by the system. Thus \textbf{digital signatures} are needed to ensure fine-grained validity of a document, while the \textbf{hash chain} operates at a coarse-grained level.
+
+\subsection{Goals}
+The main goal
+
+\subsection{Structure of the report}
+\todo{One sentence per section.}
+
+% ============================== 2. BACKGROUND (~2 pages) ====================
+\section{Background}
+
+\subsection{Digital signatures}
+\todo{Define sign/verify. Describe ECDSA over P-256 (FIPS 186-5) and RSA-PSS with a
+4096-bit modulus (RFC 8017). Explain why signing cost differs between the two.}
+
+\subsection{Hash chains and tamper evidence}
+Each log entry commits to its predecessor:
+\begin{equation}
+  h_i = \mathrm{SHA\text{-}256}\bigl(h_{i-1} \,\Vert\, \sigma_i \,\Vert\, d_i\bigr),
+  \qquad h_0 = 0^{256},
+  \label{eq:chain}
+\end{equation}
+where $d_i$ is the document digest and $\sigma_i$ its signature.
+\todo{Explain why modifying entry $j$ invalidates every $h_i$ with $i \ge j$.}
+
+\subsection{Queueing model}
+Requests arrive as a Poisson process of rate $\lambda$, so inter-arrival times are
+exponential; they are generated by inverse transform sampling,
+$\Delta t = -\ln(1-U)/\lambda$ with $U\sim\mathcal{U}(0,1)$.
+A single worker serves them in FIFO order with a general service-time distribution,
+i.e.\ an M/G/1 queue. With $\rho = \lambda\,\mathbb{E}[S] < 1$ the
+Pollaczek--Khinchine formula gives the mean waiting time
+\begin{equation}
+  \mathbb{E}[W_q] = \frac{\lambda\,\mathbb{E}[S^2]}{2\,(1-\rho)},
+  \qquad \mathbb{E}[S^2] = \mathrm{Var}(S) + \mathbb{E}[S]^2 .
+  \label{eq:pk}
+\end{equation}
+\todo{Add one line on Little's law and on what happens when $\rho \ge 1$.}
+
+% ============================== 3. ARCHITECTURE (~1.5 pages) ================
+\section{System Architecture}
+
+\subsection{Components}
+\todo{Describe the three files: \texttt{index.html} (UI), \texttt{main.js} (queue, traffic
+generator, verification), \texttt{worker.js} (central authority holding the private keys).}
+
+\subsection{Message flow}
+Figure~\ref{fig:flow} shows one request from arrival to receipt.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[
+  box/.style={draw, rounded corners, minimum width=3.2cm, minimum height=0.9cm, align=center},
+  msg/.style={-{Stealth}, thick}]
+  \node[box] (q)  {Client thread\\(FIFO queue)};
+  \node[box, right=5cm of q] (w) {Web Worker\\(authority)};
+  \draw[msg] ([yshift=0.25cm]q.east) -- node[above, font=\footnotesize]{\texttt{SIGN\_REQUEST}} ([yshift=0.25cm]w.west);
+  \draw[msg] ([yshift=-0.25cm]w.west) -- node[below, font=\footnotesize]{\texttt{SIGN\_SUCCESS} + telemetry} ([yshift=-0.25cm]q.east);
+\end{tikzpicture}
+\caption{Request/response between the client thread and the worker.}
+\label{fig:flow}
+\end{figure}
+
+\subsection{Receipts and telemetry}
+\todo{List the receipt fields (sequence, digest, signature, algorithm, timestamp, chain proof)
+and the three timestamps used for metrics: arrival, queue exit, service time.}
+
+% ============================== 4. IMPLEMENTATION (~2 pages) ================
+\section{Implementation}
+
+\subsection{FIFO queue and single-server state machine}
+\todo{Explain why \texttt{serverState} is needed even though JavaScript is single-threaded
+(the worker is asynchronous).}
+\begin{lstlisting}
+function processQueue() {
+  if (serverState === "PROCESSING" || requestQueue.length === 0) return;
+  const nextRequest = requestQueue.shift();   // FIFO
+  serverState = "PROCESSING";
+  nextRequest.tQueueExit = performance.now();
+  notaryWorker.postMessage({ type: "SIGN_REQUEST", data: nextRequest });
+}
+\end{lstlisting}
+
+\subsection{Signing and hash chaining in the worker}
+\todo{Paste a short excerpt from \texttt{worker.js} (sign, then compute the chain hash) and
+explain the isolation argument: the main thread never sees the private keys.}
+
+\subsection{Verification engine}
+\todo{Describe single-signature verification (SPKI import, \texttt{crypto.subtle.verify})
+and full-chain replay from the genesis hash.}
+
+\subsection{Traffic generator}
+\todo{Describe \texttt{startPoissonTraffic(lambda, n, algorithm)} and how it is invoked.}
+
+% ============================== 5. EVALUATION (~2 pages) ====================
+\section{Experimental Evaluation}
+
+\subsection{Setup}
+\todo{Browser and version, CPU, OS, number of requests per run, number of repetitions.
+Mention that service time is measured inside the worker and covers signing plus the
+chain hash, not message passing.}
+
+\subsection{Service time of ECDSA vs RSA-PSS}
+\begin{table}[ht]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+Algorithm & $\mathbb{E}[S]$ (ms) & $\mathrm{Var}(S)$ & $\mathbb{E}[S^2]$ & $\mu=1/\mathbb{E}[S]$ (req/s)\\
+\midrule
+ECDSA P-256   & \todo{} & \todo{} & \todo{} & \todo{} \\
+RSA-PSS 4096  & \todo{} & \todo{} & \todo{} & \todo{} \\
+\bottomrule
+\end{tabular}
+\caption{Measured service-time statistics.}
+\end{table}
+
+\subsection{Waiting time versus load}
+\todo{For $\rho \in \{0.3, 0.5, 0.7, 0.9\}$ choose $\lambda=\rho/\mathbb{E}[S]$, run the
+generator, and compare the measured mean wait with Eq.~\eqref{eq:pk}. Plot
+measured vs.\ predicted (one curve per algorithm).}
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+Algorithm & $\rho$ & $\lambda$ (req/s) & $\overline{W_q}$ measured (ms) & $\mathbb{E}[W_q]$ P--K (ms)\\
+\midrule
+\todo{} & \todo{} & \todo{} & \todo{} & \todo{} \\
+\bottomrule
+\end{tabular}
+\caption{Measured vs.\ predicted mean waiting time.}
+\end{table}
+
+\subsection{Discussion}
+\todo{Does the model fit? Possible sources of error: \texttt{setTimeout} jitter, short runs,
+warm-up (first requests are slower), service times not independent, other browser load.}
+
+% ============================== 6. SECURITY (~1 page) =======================
+\section{Security Analysis and Limitations}
+\todo{Discuss each point and say whether it matters for the threat model:}
+\begin{itemize}
+  \item the chain hash covers signature and digest but \emph{not} sequence, timestamp
+        or algorithm, so those fields can be altered undetected;
+  \item the log lives in the client's memory, so an attacker can rewrite it \emph{and}
+        recompute every hash; real systems anchor the head hash externally;
+  \item keys are generated with \texttt{extractable: true}, which is stricter as
+        \texttt{false} for the private keys;
+  \item a single central authority is a single point of trust and of failure;
+  \item the digest is signed with ECDSA/RSA-PSS hashing it again (a hash of a hash):
+        check whether this is intended.
+\end{itemize}
+
+% ============================== 7. CONCLUSION (~0.5 page) ===================
+\section{Conclusion}
+\todo{Summarise results in 3--4 sentences, state one limitation, and give two
+concrete future-work items (e.g.\ multiple workers $\to$ M/G/c, persistent log,
+external timestamping).}
+
+\end{spacing}
+
+% ============================== REFERENCES ==================================
+\begin{thebibliography}{9}
+\bibitem{haber}  S.~Haber, W.~S.~Stornetta. How to time-stamp a digital document.
+  \emph{Journal of Cryptology}, 3(2), 1991.
+\bibitem{fips}   NIST. \emph{Digital Signature Standard (DSS)}, FIPS 186-5, 2023.
+\bibitem{rfc}    K.~Moriarty et al. \emph{PKCS \#1: RSA Cryptography Specifications
+  Version 2.2}, RFC 8017, 2016.
+\bibitem{kleinrock} L.~Kleinrock. \emph{Queueing Systems, Volume 1: Theory}. Wiley, 1975.
+\bibitem{webcrypto} W3C. \emph{Web Cryptography API}. \url{https://www.w3.org/TR/WebCryptoAPI/}
+\end{thebibliography}
+
+\end{document}
