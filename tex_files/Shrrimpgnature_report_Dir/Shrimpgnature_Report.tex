@@ -217,7 +217,7 @@ The generated receipt includes the sequence number, document digest, generated s
 \subsection{FIFO queue and single-server state machine}
 The queue logic is implemented in \texttt{fifoServer.js}. It encapsulates an array-based queue and maintains the server state as either \texttt{IDLE} or \texttt{PROCESSING}. When a job is enqueued, it receives an arrival timestamp. If the server in \texttt{IDLE}, the job is immediately dequeued, its queue exit time is stamped, the state transitions to \texttt{PROCESSING}, and the request is dispatched. Upon task completion, the state resets to \texttt{IDLE}, and the \texttt{next()} routine is invoked.
 
-\begin{lstlisting}[lenguage=JavaScript, caption=queue/fifoServer.js]
+\begin{lstlisting}[language=JavaScript, caption=queue/fifoServer.js]
 export function createFifoServer({ dispatch, onDepthChange = () => {} }) {
   const queue = [];
   let state = "IDLE";
@@ -252,7 +252,7 @@ export function createFifoServer({ dispatch, onDepthChange = () => {} }) {
 The worker initializes by generating ECDSA and RSA-PSS key pairs using the native \texttt{crypto.subtle} API. During processing, the signing method is invoked over the document digest. Immediately following the signature generation, the hash chain link is computed by calling \texttt{computeHashChain}. Performance metrics strictly measure the time around these cryptographic bounds right inside the signing method. Executing this inside a Web Worker prevents CPU-intensive 4096-bit RSA operations from blocking the main thread.
 
 
-\begin{lstlisting}[lenguage=JavaScript, caption=worker/authority.js]
+\begin{lstlisting}[language=JavaScript, caption=worker/authority.js]
 export function createAuthority() {
   const privateKeys = { ecdsa: null, rsa: null };
   let currentChainHash = GENESIS_HASH;
@@ -304,7 +304,7 @@ export function createAuthority() {
 \subsection{Verification engine}
 The audit engine (\texttt{auditLog.js}) performs a two-layer verification sequentially over the ledger. The first one involves recalculating the \texttt{chainHash} for each block and ensuring it matches the \texttt{prevHash} of the subsequent block. The second layer imports the Notary Authority's public key and verifies every signature. The engine reports the sequence number (\texttt{firsTamperedBlock}or \texttt{firstForgedSignatureBlock}) where any integrity check fails. The ledger components also contains the attacker simulator \texttt{attacks.js}, that provides a naive attack that only tamper the last digest and a more complex approach where, after a digest alteration, the entire hash chain is recalculated, which make the first  layer verification passes without error.
 
-\begin{lstlisting}[lenguage=JavaScript, caption=ledger/auditLog.js]
+\begin{lstlisting}[language=JavaScript, caption=ledger/auditLog.js]
 export async function verifyReceiptSignature(receipt) {...}
 
 export async function auditLedger(entries) {
@@ -356,7 +356,7 @@ export async function auditLedger(entries) {
 The synthetic workload is managed by \texttt{poissonGenerator.js}. It uses exponential inter-arrival times derived via the inverse transform method:  $$\text{delay} = (-\frac{\ln(1-\text{rand}())} {\lambda}) \times 1000 \text{ milliseconds}.$$ A recursive timeout function schedules subsequent submissions, allowing to continously simulate requests matching the user-configured arrival late ($\lambda$)
 
 
-\begin{lstlisting}[lenguage=JavaScript, caption=sim/posissonGenerator.js]
+\begin{lstlisting}[language=JavaScript, caption=sim/posissonGenerator.js]
 export function poissonDelayMs(lambda, rand = Math.random) {...}
 
 export function createPoissonGenerator({ submit, onStateChange = () => {}, log = () => {} }) {
