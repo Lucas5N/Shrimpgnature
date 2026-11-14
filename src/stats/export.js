@@ -51,10 +51,7 @@ export function downloadCSV() {
 
   const a = document.createElement("a");
   a.setAttribute("href", url);
-  a.setAttribute(
-    "download",
-    `notary_simulation_${Algorithm}_${Date.now()}.csv`,
-  );
+  a.setAttribute("download", `notary_simulation_${Date.now()}.csv`);
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
