@@ -212,7 +212,6 @@ The generated receipt includes the sequence number, document digest, generated s
 \pagebreak{}
 
 \section{Implementation}
-\todo{mettere codice per ste implementazioni}
 
 \subsection{FIFO queue and single-server state machine}
 The queue logic is implemented in \texttt{fifoServer.js}. It encapsulates an array-based queue and maintains the server state as either \texttt{IDLE} or \texttt{PROCESSING}. When a job is enqueued, it receives an arrival timestamp. If the server in \texttt{IDLE}, the job is immediately dequeued, its queue exit time is stamped, the state transitions to \texttt{PROCESSING}, and the request is dispatched. Upon task completion, the state resets to \texttt{IDLE}, and the \texttt{next()} routine is invoked.
