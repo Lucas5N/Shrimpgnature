@@ -400,51 +400,97 @@ export function createPoissonGenerator({ submit, onStateChange = () => {}, log =
 
 
 
-
+\pagebreak
 
 
 \section{Experimental Evaluation}
 
 \subsection{Setup}
-\todo{Browser and version, CPU, OS, number of requests per run, number of repetitions.
-Mention that service time is measured inside the worker and covers signing plus the
-chain hash, not message passing.}
+To evaluate cryptographic performance and queueing behavior without cross-run carryover, four independent workloads were executed in the browser (Brave) after refreshing the page prior to each test, ensuring an empty audit ledger and an unpopulated $100$-sample telemetry window at the start of every run:
+\begin{enumerate}
+    \item \textbf{ECDSA, low load:} $N = 100$ requests at configured $\lambda_{\text{cfg}} = 10\text{ req/s}$.
+    \item \textbf{ECDSA, high load:} $N = 1000$ requests at configured $\lambda_{\text{cfg}} = 500\text{ req/s}$.
+    \item \textbf{RSA-PSS, low load:} $N = 100$ requests at configured $\lambda_{\text{cfg}} = 10\text{ req/s}$.
+    \item \textbf{RSA-PSS, high load:} $N = 1000$ requests at configured $\lambda_{\text{cfg}} = 500\text{ req/s}$.
+\end{enumerate}
+
+\vspace{1em}\noindent Because \texttt{computeQueueStatistics} requires at least five completions before outputting metrics, CSV telemetry begins at sequence index $4$ in every run (spanning indices $4\text{--}99$ for $N=100$ and $4\text{--}999$ for $N=1000$). Service time $S$ was timed strictly around signing and hash chaining inside the Web Worker via \texttt{performance.now()} ($\approx 0.1\text{ ms}$ timer resolution), while waiting time $W_q = t_{\text{QueueExit}} - t_{\text{Arrival}}$ was recorded by the main-thread FIFO queue. Analytical predictions ($\rho$, M/M/1, and M/G/1) were evaluated over the sliding window of the latest $100$ samples using $\lambda_{\text{cfg}}$.
+
+
+
+
+
+
+
+
 
 \subsection{Service time of ECDSA vs RSA-PSS}
-\begin{table}[ht]
+Table~\ref{tab:eval-summary} summarizes the final $100$-sample sliding-window telemetry recorded at the completion of each run.
+
+\begin{table}[htbp]
 \centering
-\begin{tabular}{lrrrr}
+\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\caption{Summary of final $100$-sample sliding-window telemetry for ECDSA (P-256) and RSA-PSS (4096-bit), comparing configured ($\lambda_{\text{cfg}}$) and measured ($\lambda_{\text{act}}$) arrival rates.}
+\label{tab:eval-summary}
+\begin{tabular}{lcccccccc}
 \toprule
-Algorithm & $\mathbb{E}[S]$ (ms) & $\mathrm{Var}(S)$ & $\mathbb{E}[S^2]$ & $\mu=1/\mathbb{E}[S]$ (req/s)\\
+Algorithm & $\lambda_{\text{cfg}}$ & $\lambda_{\text{act}}$ & $\bar{S}$ & $\mu$ & $\rho$ & Emp.\ $\bar{W}_q$ & \multicolumn{2}{c}{Model $\bar{W}_q$ (ms)} \\
+\cmidrule(lr){8-9}
+ & (req/s) & (req/s) & (ms) & (req/s) & ($\lambda_{\text{cfg}}/\mu$) & (ms) & M/M/1 & M/G/1 \\
 \midrule
-ECDSA P-256   & \todo{} & \todo{} & \todo{} & \todo{} \\
-RSA-PSS 4096  & \todo{} & \todo{} & \todo{} & \todo{} \\
+ECDSA   & $10$  & $9.57$  & $0.160$ & $6{,}250$ & $0.0016$ & $0.052$   & $<0.001$ & $<0.001$ \\
+ECDSA   & $500$ & $22.36$ & $0.133$ & $7{,}519$ & $0.0665$ & $0.018$   & $0.009$  & $0.006$ \\
+RSA-PSS & $10$  & $9.90$  & $3.610$ & $277.0$   & $0.0361$ & $0.061$   & $0.135$  & $0.069$ \\
+RSA-PSS & $500$ & $21.66$ & $3.576$ & $279.6$   & $1.7880$ & $275.236$ & $\infty$ & $\infty$ \\
 \bottomrule
 \end{tabular}
-\caption{Measured service-time statistics.}
 \end{table}
+
+\noindent
+The measurements demonstrate a clear separation in cryptographic cost between the two algorithms. ECDSA (P-256) achieves a mean service time of $\bar{S} = 0.160\text{ ms}$ ($\sigma_S \approx 0.077\text{ ms}$ over Seq.\ $4\text{--}99$, $\mu = 6{,}250\text{ req/s}$) at $\lambda_{\text{cfg}} = 10\text{ req/s}$, and $\bar{S} = 0.133\text{ ms}$ ($\mu = 7{,}519\text{ req/s}$) at $\lambda_{\text{cfg}} = 500\text{ req/s}$. Individual ECDSA readings lie near the $0.1\text{ ms}$ browser timer quantization floor, frequently registering $0.0\text{--}0.2\text{ ms}$.
+
+\noindent
+In contrast, 4096-bit RSA-PSS exhibits a mean service time of $\bar{S} = 3.610\text{ ms}$ ($\sigma_S \approx 0.532\text{ ms}$, $\mu = 277.0\text{ req/s}$) at $\lambda_{\text{cfg}} = 10\text{ req/s}$ and $\bar{S} = 3.576\text{ ms}$ ($\mu = 279.6\text{ req/s}$) at $\lambda_{\text{cfg}} = 500\text{ req/s}$. RSA-PSS signing is therefore approximately $22.6\times$ to $26.9\times$ slower than ECDSA, reflecting the heavy computational cost of 4096-bit modular exponentiation relative to P-256 elliptic-curve signing. Moreover, the RSA-PSS low-load run yields a very small squared coefficient of variation ($C_S^2 = \sigma_S^2 / \bar{S}^2 \approx 0.022 \ll 1$), confirming that cryptographic service times are nearly deterministic. Consequently, the Pollaczek--Khinchine M/G/1 formula predicts roughly half the waiting time of the exponential M/M/1 model ($0.069\text{ ms}$ vs.\ $0.135\text{ ms}$).
 
 \subsection{Waiting time versus load}
-\todo{For $\rho \in \{0.3, 0.5, 0.7, 0.9\}$ choose $\lambda=\rho/\mathbb{E}[S]$, run the
-generator, and compare the measured mean wait with Eq.~\eqref{eq:pk}. Plot
-measured vs.\ predicted (one curve per algorithm).}
+Comparing waiting times across both arrival rates highlights the transition from lightly loaded operation to queue saturation:
 
-\begin{table}[ht]
-\centering
-\begin{tabular}{lrrrr}
-\toprule
-Algorithm & $\rho$ & $\lambda$ (req/s) & $\overline{W_q}$ measured (ms) & $\mathbb{E}[W_q]$ P--K (ms)\\
-\midrule
-\todo{} & \todo{} & \todo{} & \todo{} & \todo{} \\
-\bottomrule
-\end{tabular}
-\caption{Measured vs.\ predicted mean waiting time.}
-\end{table}
+\begin{itemize}
+    \item \textbf{Light load ($\lambda_{\text{cfg}} = 10\text{ req/s}$):} With a fresh ledger, actual arrival rates closely matched the target rate ($9.57\text{ req/s}$ for ECDSA and $9.90\text{ req/s}$ for RSA-PSS). Utilization remained minimal ($\rho = 0.0016$ and $\rho = 0.0361$), so jobs rarely encountered a busy worker and empirical mean wait times stayed negligible at $0.052\text{ ms}$ and $0.061\text{ ms}$, respectively. Notably, for RSA-PSS, the empirical mean wait ($0.061\text{ ms}$) aligns closely with the M/G/1 prediction ($0.069\text{ ms}$), whereas M/M/1 ($0.135\text{ ms}$) overestimates delay by more than a factor of two.
+
+    \item \textbf{ECDSA at high target load ($\lambda_{\text{cfg}} = 500\text{ req/s}$):} Because ECDSA's service capacity ($\mu = 7{,}519\text{ req/s}$) far exceeds the target arrival rate, configured utilization stayed well below saturation ($\rho = 0.0665$ at Seq.\ $999$). Across all $996$ logged requests, individual wait times never exceeded $0.1\text{ ms}$, and the final $100$-sample moving mean converged to $\bar{W}_q = 0.018\text{ ms}$, matching the sub-millisecond M/M/1 ($0.009\text{ ms}$) and M/G/1 ($0.006\text{ ms}$) estimates.
+
+    \item \textbf{RSA-PSS at high target load ($\lambda_{\text{cfg}} = 500\text{ req/s}$):} With $\lambda_{\text{cfg}} = 500 > \mu \approx 279.6\text{ req/s}$, configured utilization remained strictly supercritical throughout the run ($\rho \in [1.640, 1.829]$, ending at $\rho = 1.7880$), causing both M/M/1 and M/G/1 models to diverge to $\infty$. Unlike ECDSA, the RSA-PSS queue never drained across the entire $1000$-request workload ($W_q > 0$ on every logged row): individual wait times grew from $9.8\text{ ms}$ at Seq.\ $4$ to a peak of $410.3\text{ ms}$ at Seq.\ $965$, driving the empirical $100$-sample mean wait $\bar{W}_q$ upward from $3.90\text{ ms}$ (Seq.\ $4$) to $275.236\text{ ms}$ at Seq.\ $999$ (peaking at $275.477\text{ ms}$ at Seq.\ $998$).
+\end{itemize}
 
 \subsection{Discussion}
-\todo{Does the model fit? Possible sources of error: \texttt{setTimeout} jitter, short runs,
-warm-up (first requests are slower), service times not independent, other browser load.}
+The refreshed datasets confirm two key theoretical expectations while revealing important browser-level implementation effects at high request counts:
 
+\begin{enumerate}
+    \item \textbf{Validity of the M/G/1 model:} Under clean sub-critical traffic ($\lambda_{\text{cfg}} = 10\text{ req/s}$, RSA-PSS), empirical waiting times validate the M/G/1 Pollaczek--Khinchine prediction ($0.061\text{ ms}$ empirical vs.\ $0.069\text{ ms}$ M/G/1), confirming that low-variance cryptographic execution deviates substantially from the memoryless service assumption of M/M/1 ($0.135\text{ ms}$).
+
+    \item \textbf{Browser timer clamping and effective arrival rate:} At $\lambda_{\text{cfg}} = 500\text{ req/s}$, initial inter-arrival intervals at Seq.\ $4\text{--}10$ were $4.1\text{--}6.5\text{ ms}$ rather than the theoretical $2.0\text{ ms}$ mean because browsers clamp nested \texttt{setTimeout} callbacks in \texttt{poissonGenerator.js} to a $4\text{ ms}$ minimum ($\le 250\text{ req/s}$). Over the full $1000$-request runs, average measured throughput dropped further to $22.36\text{ req/s}$ (ECDSA) and $21.66\text{ req/s}$ (RSA-PSS).
+
+    \item \textbf{Main-thread DOM rendering overhead at high $N$:} Inspection of arrival timestamps shows inter-event intervals expanding steadily from $\approx 4\text{--}6\text{ ms}$ at Seq.\ $5\text{--}15$ to $\approx 80\text{--}105\text{ ms}$ near Seq.\ $999$. This slowdown stems from \texttt{auditTable.render(publicAuditLog)} clearing and reconstructing all accumulated HTML rows on every \texttt{SIGN\_SUCCESS} before invoking \texttt{server.complete()}. In the ECDSA run, \texttt{setTimeout} was delayed alongside rendering, keeping the queue empty ($W_q \le 0.1\text{ ms}$). In the RSA-PSS run, however, jobs queued during the initial rapid burst never cleared as main-thread render latency accumulated on top of the $3.58\text{ ms}$ signing time, creating a persistent multi-request backlog that drove waiting times past $400\text{ ms}$.
+\end{enumerate}
+
+Overall, resetting state between runs successfully eliminated carryover bias and produced accurate low-load benchmarks. To isolate pure cryptographic queueing behavior at high request counts ($N \ge 300$), the interface should append new audit rows incrementally (or cap displayed DOM rows) rather than re-rendering the entire table on every completion.
+\pagebreak
+\subsection{Discussion}
+Inspecting the arrival timestamps in the CSV logs uncovers two critical implementation and browser effects that explain why the system did not exhibit unbounded queue growth at $\rho \approx 1.78$ and why empirical wait times exceeded analytical worker predictions during high-volume runs:
+
+\begin{enumerate}
+    \item \textbf{Main-thread DOM rendering bottleneck ($O(N^2)$ cumulative overhead):} In \texttt{main.js}, every \texttt{SIGN\_SUCCESS} handler calls \texttt{auditTable.render(publicAuditLog)} \emph{before} calling \texttt{server.complete()}. Because \texttt{auditTable.js} clears and rebuilds the entire HTML \texttt{<tbody>} for all accumulated receipts on every completion, rendering $1{,}100\text{--}2{,}200$ table rows blocks the main thread for roughly $80\text{--}200\text{ ms}$ per request. This holds the FIFO server in the \texttt{PROCESSING} state long after the worker has finished its $3.5\text{ ms}$ cryptographic operation, inflating observed $W_q$ to $80\text{--}265\text{ ms}$ while simultaneously starving \texttt{poissonGenerator.js} timeouts.
+
+    \item \textbf{Configured vs.\ actual arrival rate and timer clamping:} Because recursive \texttt{setTimeout} calls in browsers are clamped to a minimum $4\text{ ms}$ delay ($\le 250\text{ req/s}$) and further delayed by main-thread rendering stalls, the \emph{actual} measured arrival rates were dramatically lower than the configured slider values: $18.88\text{ req/s}$ (ECDSA, $\lambda_{\text{cfg}} = 500$), $7.56\text{ req/s}$ (RSA-PSS, $\lambda_{\text{cfg}} = 500$), $4.75\text{ req/s}$ (RSA-PSS, $\lambda_{\text{cfg}} = 10$), and $4.54\text{ req/s}$ (ECDSA, $\lambda_{\text{cfg}} = 10$). Because \texttt{computeQueueStatistics} calculates $\rho = \lambda_{\text{cfg}} / \mu$ rather than using measured inter-arrival times, the theoretical models assumed $\lambda = 500\text{ req/s}$ ($\rho > 1.7$), whereas the worker's true utilization was $\lambda_{\text{actual}} / \mu \approx 0.027$. This explains why the queue periodically drained and why $\bar{W}_q$ stayed bounded around $58\text{--}161\text{ ms}$.
+
+    \item \textbf{Sliding-window carryover across sequential runs:} Because the $100$-sample telemetry window is not cleared when starting a new workload, sequential tests without a page refresh retain carryover values in the first $99$ rows (visible at Seq.\ $1100$, $2100$, and $2200$).
+\end{enumerate}
+
+In summary, the experiments validate that ECDSA P-256 outperforms 4096-bit RSA-PSS by over $20\times$ in pure worker signing time and confirm that cryptographic service times have low variance ($C_S^2 \approx 0.04$), favoring M/G/1 over M/M/1. At scale, however, overall system latency in this architecture is governed not by cryptographic computation, but by $O(N)$ per-block DOM table re-rendering on the main thread---demonstrating that production audit interfaces should append rows incrementally rather than re-rendering the entire ledger.
+
+\pagebreak
 
 % ============================== 7. CONCLUSION (~0.5 page) ===================
 \section{Conclusion}
