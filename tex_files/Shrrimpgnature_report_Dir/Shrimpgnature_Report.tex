@@ -244,11 +244,11 @@ export function createFifoServer({ dispatch, onDepthChange = () => {} }) {
 }
 \end{lstlisting}
 
-
+\pagebreak
 \subsection{Signing and hash chaining in the worker}
 The worker initializes by generating ECDSA and RSA-PSS key pairs using the native \texttt{crypto.subtle} API. During processing, the signing method is invoked over the document digest. Immediately following the signature generation, the hash chain link is computed by calling \texttt{computeHashChain}. Performance metrics strictly measure the time around these cryptographic bounds right inside the signing method. Executing this inside a Web Worker prevents CPU-intensive 4096-bit RSA operations from blocking the main thread.
 
-\pagebreak
+
 \begin{lstlisting}[language=JavaScript, caption=worker/authority.js]
 export function createAuthority() {
   const privateKeys = { ecdsa: null, rsa: null };
@@ -297,6 +297,7 @@ export function createAuthority() {
 }
 \end{lstlisting}
 
+\pagebreak
 
 \subsection{Verification engine}
 The audit engine (\texttt{auditLog.js}) performs a two-layer verification sequentially over the ledger. The first one involves recalculating the \texttt{chainHash} for each block and ensuring it matches the \texttt{prevHash} of the subsequent block. The second layer imports the Notary Authority's public key and verifies every signature. The engine reports the sequence number (\texttt{firsTamperedBlock} or \texttt{firstForgedSignatureBlock}) where any integrity check fails. The ledger components also contains the attacker simulator \texttt{attacks.js}, that provides a naive attack that only tamper the last digest and a more complex approach where, after a digest alteration, the entire hash chain is recalculated, which make the first  layer verification passes without error.
@@ -348,7 +349,7 @@ export async function auditLedger(entries) {
 
 \end{lstlisting}
 
-
+\pagebreak
 \subsection{Traffic generator}
 The synthetic workload is managed by \texttt{poissonGenerator.js}. It uses exponential inter-arrival times derived via the inverse transform method:  $$\text{delay} = (-\frac{\ln(1-\text{rand}())} {\lambda}) \times 1000 \text{ milliseconds}.$$ A recursive timeout function schedules subsequent submissions, allowing to continuously simulate requests matching the user-configured arrival rate ($\lambda$)
 
@@ -425,7 +426,7 @@ refreshing the browser prior to each run to maintain isolated initial conditions
 
 
 
-
+\pagebreak
 \subsection{Service time of ECDSA vs RSA-PSS}
 Table~\ref{tab:eval-summary} summarizes the final $100$-sample sliding-window telemetry recorded at the completion of each run.
 
@@ -471,6 +472,7 @@ The measurements demonstrate a clear separation in cryptographic cost between th
 \noindent
 In contrast, 4096-bit RSA-PSS exhibits a mean service time of $\bar{S} = 3.610\text{ ms}$ ($\sigma_S \approx 0.532\text{ ms}$, $\mu = 277.0\text{ req/s}$) at $\lambda_{\text{cfg}} = 10\text{ req/s}$ and $\bar{S} = 3.576\text{ ms}$ ($\mu = 279.6\text{ req/s}$) at $\lambda_{\text{cfg}} = 500\text{ req/s}$. RSA-PSS signing is therefore approximately $22.6\times$ to $26.9\times$ slower than ECDSA, reflecting the heavy computational cost of 4096-bit modular exponentiation relative to P-256 elliptic-curve signing. Moreover, the RSA-PSS low-load run yields a very small squared coefficient of variation ($C_S^2 = \sigma_S^2 / \bar{S}^2 \approx 0.022 \ll 1$), confirming that cryptographic service times are nearly deterministic. Consequently, the Pollaczek--Khinchine M/G/1 formula predicts roughly half the waiting time of the exponential M/M/1 model ($0.069\text{ ms}$ vs.\ $0.135\text{ ms}$).
 
+\pagebreak 
 \subsection{Browser Scheduling Ceiling and Effective Utilization}
 To verify whether the main-thread Poisson generator sustained the configured arrival rates $\lambda_{\text{cfg}}$, the effective arrival rate $\hat{\lambda}_{\text{eff}}$ was reconstructed post-hoc from the exported arrival timestamps:
 \[
@@ -551,6 +553,7 @@ Comparing waiting times across both arrival rates highlights the transition from
     \end{minipage}
 \end{figure}
 
+\pagebreak
 \subsection{Discussion}
 The refreshed datasets confirm two key theoretical expectations while revealing important browser-level implementation effects at high request counts:
 
@@ -602,15 +605,5 @@ Future work will address these bottlenecks and extend the platform along two con
 
 \end{spacing}
 
-% ============================== REFERENCES ==================================
-\begin{thebibliography}{9}
-\bibitem{haber}  S.~Haber, W.~S.~Stornetta. How to time-stamp a digital document.
-  \emph{Journal of Cryptology}, 3(2), 1991.
-\bibitem{fips}   NIST. \emph{Digital Signature Standard (DSS)}, FIPS 186-5, 2023.
-\bibitem{rfc}    K.~Moriarty et al. \emph{PKCS \#1: RSA Cryptography Specifications
-  Version 2.2}, RFC 8017, 2016.
-\bibitem{kleinrock} L.~Kleinrock. \emph{Queueing Systems, Volume 1: Theory}. Wiley, 1975.
-\bibitem{webcrypto} W3C. \emph{Web Cryptography API}. \url{https://www.w3.org/TR/WebCryptoAPI/}
-\end{thebibliography}
 
 \end{document}
