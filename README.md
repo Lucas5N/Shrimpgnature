@@ -79,7 +79,7 @@ Because the project uses native **ES Modules** and **Web Workers**, opening `ind
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/Lucas5N/Shrimpgnature.git
-   cd <your-repo>
+   cd Shrimpgnature
    ```
 
 2. **Start the local server:**
