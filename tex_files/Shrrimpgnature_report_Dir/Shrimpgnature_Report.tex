@@ -115,6 +115,7 @@
 \noindent
 This report presents \emph{Shrimpgnature}, a browser-native digital notary and tamper-evident audit log system built on the Web Cryptography API and modeled via single-server queueing theory. Clients locally pre-hash documents with SHA-256 and submit digests through a main-thread FIFO queue to an isolated Web Worker acting as a Central Notary Authority, which signs each request using ECDSA (P-256) or RSA-PSS (4096-bit) and links receipts into a forward SHA-256 hash chain. A two-layer audit engine verifies both chain continuity and asymmetric signatures, detecting both single-record tampering and full history-rewriting attacks. Under synthetic Poisson workloads, experimental evaluation confirms that ECDSA is over $22\times$ faster than 4096-bit RSA-PSS, and demonstrates that low-variance cryptographic service times ($C_S^2 \approx 0.022$) follow the Pollaczek--Khinchine M/G/1 model rather than exponential M/M/1 assumptions, while revealing main-thread DOM rendering and browser timer clamping as key scaling bottlenecks.
 \end{abstract}
+\pagebreak
 \tableofcontents
 \clearpage
 \pagenumbering{arabic}
