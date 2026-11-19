@@ -78,7 +78,7 @@ Because the project uses native **ES Modules** and **Web Workers**, opening `ind
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/<your-username>/<your-repo>.git
+   git clone https://github.com/Lucas5N/Shrimpgnature.git
    cd <your-repo>
    ```
 
